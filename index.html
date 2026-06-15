@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#ffffff" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="لینک‌چک" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <title>لینک‌چک — تشخیص کلاهبرداری</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Tahoma, 'Segoe UI', sans-serif;
+      background: #f5f5f5;
+      color: #1a1a1a;
+      min-height: 100dvh;
+      direction: rtl;
+    }
+
+    header {
+      background: #fff;
+      border-bottom: 1px solid #e5e5e5;
+      padding: 1rem 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    header svg { flex-shrink: 0; }
+
+    header h1 {
+      font-size: 17px;
+      font-weight: 600;
+      color: #1a1a1a;
+    }
+
+    header span {
+      font-size: 11px;
+      background: #eff6ff;
+      color: #2563eb;
+      border-radius: 6px;
+      padding: 2px 7px;
+      border: 1px solid #bfdbfe;
+      margin-right: auto;
+    }
+
+    main { padding: 1.25rem; max-width: 600px; margin: 0 auto; }
+
+    .card {
+      background: #fff;
+      border-radius: 14px;
+      border: 1px solid #e5e5e5;
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 0.75rem;
+    }
+
+    input[type=text] {
+      flex: 1;
+      border: 1px solid #d1d5db;
+      border-radius: 10px;
+      padding: 0.7rem 1rem;
+      font-size: 15px;
+      direction: ltr;
+      text-align: left;
+      outline: none;
+      background: #fafafa;
+      color: #1a1a1a;
+    }
+
+    input[type=text]:focus {
+      border-color: #6366f1;
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+    }
+
+    button.primary {
+      background: #6366f1;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 0.7rem 1.25rem;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      font-family: inherit;
+    }
+
+    button.primary:disabled { background: #a5b4fc; cursor: not-allowed; }
+    button.primary:active:not(:disabled) { transform: scale(0.97); }
+
+    .examples {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .examples span {
+      font-size: 12px;
+      color: #6b7280;
+    }
+
+    button.chip {
+      background: #f3f4f6;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 4px 10px;
+      font-size: 12px;
+      cursor: pointer;
+      direction: ltr;
+      font-family: monospace;
+      color: #374151;
+    }
+
+    button.chip:active { background: #e5e7eb; }
+
+    #result { display: none; }
+
+    .verdict-header {
+      border-radius: 12px 12px 0 0;
+      padding: 1rem 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .verdict-body {
+      border: 1px solid #e5e5e5;
+      border-top: none;
+      border-radius: 0 0 14px 14px;
+      padding: 1rem 1.25rem;
+      background: #fff;
+    }
+
+    .score-bar-track {
+      height: 6px;
+      background: #f3f4f6;
+      border-radius: 3px;
+      overflow: hidden;
+      margin: 0.75rem 0;
+    }
+
+    .score-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.6s ease;
+    }
+
+    .info-box {
+      background: #f9fafb;
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      margin-bottom: 0.75rem;
+      font-size: 14px;
+      line-height: 1.7;
+      color: #374151;
+    }
+
+    .real-domain-box {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      margin-top: 0.75rem;
+    }
+
+    .real-domain-box p { font-size: 12px; color: #2563eb; margin-bottom: 4px; font-weight: 600; }
+    .real-domain-box a { font-size: 15px; color: #1d4ed8; direction: ltr; display: inline-block; text-decoration: none; font-weight: 600; }
+
+    .issues-list { margin-top: 0.75rem; }
+    .issues-list p { font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px; }
+    .issue-item {
+      display: flex;
+      gap: 6px;
+      font-size: 13px;
+      color: #6b7280;
+      padding: 3px 0;
+      line-height: 1.5;
+    }
+    .issue-dot { flex-shrink: 0; margin-top: 6px; width: 5px; height: 5px; border-radius: 50%; background: #9ca3af; }
+
+    .steps-loading {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .step-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      color: #6b7280;
+      transition: opacity 0.3s;
+    }
+
+    .step-icon { width: 20px; height: 20px; flex-shrink: 0; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinning { animation: spin 1s linear infinite; }
+
+    .whitelist-section { margin-top: 1rem; }
+    .whitelist-section h2 { font-size: 14px; font-weight: 600; color: #374151; margin-bottom: 8px; }
+    .whitelist-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .wl-tag {
+      font-size: 11px;
+      background: #f3f4f6;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      padding: 3px 8px;
+      color: #6b7280;
+      direction: ltr;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+    <circle cx="12" cy="12" r="3"/>
+  </svg>
+  <h1>لینک‌چک</h1>
+  <span>هوش مصنوعی</span>
+</header>
+
+<main>
+  <div class="card">
+    <div class="input-row">
+      <input type="text" id="urlInput" placeholder="لینک مشکوک را اینجا بنویسید..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+      <button class="primary" id="analyzeBtn" onclick="analyzeUrl()">بررسی</button>
+    </div>
+    <div class="examples">
+      <span>نمونه:</span>
+      <button class="chip" onclick="setEx('appIe.com')">appIe.com</button>
+      <button class="chip" onclick="setEx('adliran-login.ir')">adliran-login.ir</button>
+      <button class="chip" onclick="setEx('shaparak-pay.com')">shaparak-pay.com</button>
+      <button class="chip" onclick="setEx('digikala.com')">digikala.com</button>
+    </div>
+  </div>
+
+  <div id="result"></div>
+
+  <div class="card whitelist-section">
+    <h2>🛡️ سایت‌های ایرانی معتبر در لیست سفید</h2>
+    <div class="whitelist-tags" id="wlTags"></div>
+  </div>
+</main>
+
+<script>
+const WORKER_URL = 'https://c9122e66.phishingdetectorbyali.pages.dev/';
+
+const WHITELIST = {
+  "adliran.ir":"عدل ایران","digikala.com":"دیجی‌کالا","snapp.ir":"اسنپ",
+  "tapsi.ir":"تپسی","shaparak.ir":"شاپرک","behpardakht.com":"به‌پرداخت ملت",
+  "zarinpal.com":"زرین‌پال","idpay.ir":"آیدی‌پی","mellat.ir":"بانک ملت",
+  "bmi.ir":"بانک ملی","tejarat.ir":"بانک تجارت","parsian-bank.com":"بانک پارسیان",
+  "maskan.ir":"بانک مسکن","saderatbank.com":"بانک صادرات","mci.ir":"همراه اول",
+  "irancell.ir":"ایرانسل","iran.ir":"پورتال ملی","police.ir":"پلیس",
+  "tamin.ir":"تامین اجتماعی","enamad.ir":"نماد اعتماد","tax.gov.ir":"مالیات",
+  "divar.ir":"دیوار","basalam.com":"باسلام","torob.ir":"ترب"
+};
+
+document.getElementById('wlTags').innerHTML =
+  Object.keys(WHITELIST).map(d => `<span class="wl-tag" title="${WHITELIST[d]}">${d}</span>`).join('');
+
+function setEx(u) { document.getElementById('urlInput').value = u; }
+
+function extractDomain(input) {
+  try {
+    if (!input.startsWith('http')) input = 'https://' + input;
+    return new URL(input).hostname.replace(/^www\./, '');
+  } catch { return input.replace(/^www\./, ''); }
+}
+
+function checkWL(domain) {
+  if (WHITELIST[domain]) return { found: true, info: WHITELIST[domain], domain };
+  for (const [d, info] of Object.entries(WHITELIST))
+    if (domain.endsWith('.' + d)) return { found: true, info, domain: d };
+  return { found: false };
+}
+
+function showLoading() {
+  const steps = ['بررسی لیست سفید ایرانی','جستجوی وب برای سایت اصلی','تحلیل هوش مصنوعی'];
+  document.getElementById('result').style.display = 'block';
+  document.getElementById('result').innerHTML = `
+    <div class="card steps-loading" id="stepsBox">
+      ${steps.map((s,i) => `
+        <div class="step-item" id="step-${i}" style="opacity:${i===0?1:0.35}">
+          <svg class="step-icon ${i===0?'spinning':''}" id="icon-${i}" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2">
+            <circle cx="12" cy="12" r="9"/>
+          </svg>
+          <span>${s}</span>
+        </div>
+      `).join('')}
+    </div>`;
+}
+
+function updateStep(i, total, done) {
+  for (let j = 0; j < total; j++) {
+    const el = document.getElementById(`step-${j}`);
+    const icon = document.getElementById(`icon-${j}`);
+    if (!el || !icon) continue;
+    if (j < i || (j === i && done)) {
+      el.style.opacity = '1';
+      icon.classList.remove('spinning');
+      icon.innerHTML = '<polyline points="20 6 9 17 4 12"/>';
+      icon.setAttribute('stroke','#16a34a');
+    } else if (j === i) {
+      el.style.opacity = '1';
+      icon.classList.add('spinning');
+      icon.innerHTML = '<circle cx="12" cy="12" r="9"/>';
+      icon.setAttribute('stroke','#6366f1');
+    } else {
+      el.style.opacity = '0.35';
+    }
+  }
+}
+
+async function analyzeUrl() {
+  const raw = document.getElementById('urlInput').value.trim();
+  if (!raw) return;
+  document.getElementById('analyzeBtn').disabled = true;
+  const domain = extractDomain(raw);
+  showLoading();
+
+  await sleep(400);
+  updateStep(0, 3, false);
+  const wl = checkWL(domain);
+  await sleep(500);
+  updateStep(0, 3, true);
+  updateStep(1, 3, false);
+
+  const prompt = `You are a cybersecurity expert. Analyze this URL for phishing: "${raw}" (domain: "${domain}")
+Whitelist: ${wl.found ? `FOUND as "${wl.info}" (${wl.domain})` : 'NOT found'}
+Use web_search to find the real official website for the brand this domain might be impersonating.
+Check: homograph attacks, typosquatting, suspicious keywords (login,secure,verify,pay), brand impersonation, fake Iranian gov/bank sites.
+If whitelist matched AND domain equals whitelist domain exactly: SAFE.
+Respond ONLY in JSON (no markdown):
+{"verdict":"SAFE|SUSPICIOUS|DANGEROUS","risk_score":0-100,"original_brand":"...or null","real_domain":"...or null","real_domain_source":"whitelist|web_search|knowledge","whitelist_match":true|false,"issues":["..."],"explanation_fa":"...","recommendation_fa":"..."}`;
+
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt })
+    });
+    const data = await res.json();
+    updateStep(1, 3, true);
+    updateStep(2, 3, false);
+    const clean = data.result.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(clean);
+    await sleep(300);
+    updateStep(2, 3, true);
+    await sleep(200);
+    showResult(domain, parsed, wl);
+  } catch(e) {
+    document.getElementById('result').innerHTML = `
+      <div class="card" style="background:#fef2f2;border-color:#fecaca;color:#dc2626;font-size:14px;">
+        ⚠️ خطا در اتصال. لطفاً دوباره امتحان کنید.
+      </div>`;
+  } finally {
+    document.getElementById('analyzeBtn').disabled = false;
+  }
+}
+
+function showResult(domain, r, wl) {
+  const cfg = {
+    SAFE:      { bg:'#f0fdf4', border:'#86efac', textColor:'#15803d', icon:'✅', label:'ایمن' },
+    SUSPICIOUS:{ bg:'#fffbeb', border:'#fcd34d', textColor:'#b45309', icon:'⚠️', label:'مشکوک' },
+    DANGEROUS: { bg:'#fef2f2', border:'#fca5a5', textColor:'#dc2626', icon:'🚫', label:'خطرناک' }
+  }[r.verdict] || { bg:'#f9fafb', border:'#e5e7eb', textColor:'#374151', icon:'❓', label:'نامشخص' };
+
+  const barColor = r.risk_score > 70 ? '#dc2626' : r.risk_score > 40 ? '#d97706' : '#16a34a';
+
+  const wlBadge = r.whitelist_match
+    ? `<span style="font-size:11px;background:#f0fdf4;color:#16a34a;border:1px solid #86efac;border-radius:6px;padding:2px 7px;margin-right:8px;">✓ لیست سفید</span>` : '';
+
+  const sourceMap = { whitelist:'لیست سفید', web_search:'جستجوی وب', knowledge:'دانش AI' };
+
+  const realDomain = r.real_domain ? `
+    <div class="real-domain-box">
+      <p>🔗 سایت اصلی — منبع: ${sourceMap[r.real_domain_source] || r.real_domain_source}</p>
+      <a href="https://${r.real_domain}" target="_blank" rel="noopener">${r.real_domain} ↗</a>
+    </div>` : '';
+
+  const issues = r.issues?.length ? `
+    <div class="issues-list">
+      <p>مشکلات شناسایی‌شده:</p>
+      ${r.issues.map(i => `<div class="issue-item"><div class="issue-dot"></div><span>${i}</span></div>`).join('')}
+    </div>` : '';
+
+  document.getElementById('result').innerHTML = `
+    <div style="margin-bottom:1rem;">
+      <div class="verdict-header" style="background:${cfg.bg};border:1px solid ${cfg.border};border-radius:14px 14px 0 0;">
+        <span style="font-size:28px;">${cfg.icon}</span>
+        <div style="flex:1;">
+          <div style="display:flex;align-items:center;flex-wrap:wrap;">
+            <span style="font-size:18px;font-weight:700;color:${cfg.textColor};">${cfg.label}</span>
+            ${wlBadge}
+          </div>
+          <span style="font-size:13px;color:${cfg.textColor};opacity:0.8;direction:ltr;display:block;">${domain}</span>
+        </div>
+        <div style="text-align:left;">
+          <div style="font-size:24px;font-weight:700;color:${barColor};">${r.risk_score}</div>
+          <div style="font-size:11px;color:${cfg.textColor};opacity:0.7;">از ۱۰۰</div>
+        </div>
+      </div>
+      <div class="verdict-body">
+        <div class="score-bar-track">
+          <div class="score-bar-fill" style="width:${r.risk_score}%;background:${barColor};"></div>
+        </div>
+        <div class="info-box">${r.explanation_fa}${r.recommendation_fa ? `<br><br>💡 ${r.recommendation_fa}` : ''}</div>
+        ${realDomain}${issues}
+      </div>
+    </div>`;
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+document.getElementById('urlInput').addEventListener('keydown', e => { if(e.key==='Enter') analyzeUrl(); });
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+</script>
+</body>
+</html>
